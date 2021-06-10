@@ -1,6 +1,7 @@
 import * as Discord from "discord.js";
 import * as moment from "moment-timezone";
 import { ESEAItem } from "./types";
+import { log, error } from "./log";
 
 export async function initDiscord(): Promise<Discord.Client> {
   const client = new Discord.Client();
@@ -9,12 +10,12 @@ export async function initDiscord(): Promise<Discord.Client> {
 
   return new Promise((resolve, reject) => {
     client.on("ready", () => {
-      console.info(`Logged in as ${client.user!.tag}!`);
+      log(`Logged in as ${client.user!.tag}!`);
       resolve(client);
     });
 
     client.on("error", (e) => {
-      console.error(e);
+      error(e);
       reject(e);
     });
   });

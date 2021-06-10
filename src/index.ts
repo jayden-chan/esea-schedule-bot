@@ -3,6 +3,7 @@ import * as Discord from "discord.js";
 
 import { initDiscord, getEmbed, sendEmbed, sendMessage } from "./discord";
 import { getMatches } from "./scrape";
+import { log, error } from "./log";
 import { ESEAData } from "./types";
 
 const SIX_HOURS = 6 * 60 * 60 * 1000;
@@ -12,22 +13,6 @@ const ROLE_NAME = "RAT";
 
 let dayTimeout: NodeJS.Timeout | undefined;
 let warmupTimeout: NodeJS.Timeout | undefined;
-
-function log(message?: any, ...optionalParams: any[]) {
-  console.log(
-    `[${moment().format("MMM-DD hh:mm A")}]`,
-    message,
-    ...optionalParams
-  );
-}
-
-function error(message?: any, ...optionalParams: any[]) {
-  console.error(
-    `[${moment().format("MMM-DD hh:mm A")}]`,
-    message,
-    ...optionalParams
-  );
-}
 
 function tick(client: Discord.Client) {
   return async () => {
