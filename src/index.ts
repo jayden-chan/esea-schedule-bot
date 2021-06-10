@@ -25,6 +25,7 @@ function tick(client: Discord.Client) {
         data = await getMatches();
       } catch (e) {
         error(`failed to fetch data, sleeping for ${timeout} ms`);
+        error(e);
         await new Promise((resolve) => setTimeout(resolve, timeout));
         timeout += 10000;
       }

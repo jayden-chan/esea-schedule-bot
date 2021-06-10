@@ -1,10 +1,16 @@
 import * as puppeteer from "puppeteer";
 import { ESEAData } from "./types";
+import { hostname } from "os";
 
 export async function getMatches() {
   const randomUseragent = require("random-useragent");
   const userAgent = randomUseragent.getRandom();
-  const browser = await puppeteer.launch();
+
+  const browser =
+    hostname() === "stealth"
+      ? await puppeteer.launch({ executablePath: "chromium-browser" })
+      : await puppeteer.launch();
+
   const page = await browser.newPage();
 
   // page
