@@ -6,8 +6,8 @@ import { getMatches } from "./scrape";
 import { ESEAData } from "./types";
 
 const SIX_HOURS = 6 * 60 * 60 * 1000;
-const SERVER_NAME = "this shit ass server";
-const CHANNEL_NAME = "general";
+const SERVER_NAME = "Rat With Gun eSports";
+const CHANNEL_NAME = "schedule";
 const ROLE_NAME = "RAT";
 
 let dayTimeout: NodeJS.Timeout | undefined;
