@@ -66,7 +66,7 @@ function tick(client: Discord.Client) {
     });
 
     if (hasMatchTomorrow) {
-      console.log(`Match for tomorrow found, scheduling notification`);
+      log(`Match for tomorrow found, scheduling notification`);
 
       // Send the message 24 hours before the start date
       const diffMs = moment(hasMatchTomorrow.date)
@@ -87,7 +87,7 @@ function tick(client: Discord.Client) {
     }
 
     if (hasMatchToday) {
-      console.log(`Match for today found, scheduling notification`);
+      log(`Match for today found, scheduling notification`);
 
       // Send the warmup message 1:15 before the start date
       const diffMs = moment(hasMatchToday.date)
@@ -111,26 +111,27 @@ function tick(client: Discord.Client) {
 }
 
 async function main() {
+  log("Logging into discord");
   const client = await initDiscord();
 
   tick(client)();
 
   // Refresh the data every 6 hours
-  console.log("Starting the interval");
+  log("Starting the interval");
   const interval = setInterval(
     tick(client),
     SIX_HOURS + Math.floor(Math.random() * 15000)
   );
 
   const exit = () => {
-    console.log("Exiting....");
+    log("Exiting....");
     clearInterval(interval);
 
     dayTimeout && clearTimeout(dayTimeout);
     warmupTimeout && clearTimeout(warmupTimeout);
 
     client.destroy();
-    console.log("Exited successfully");
+    log("Exited successfully");
     process.exit(0);
   };
 
