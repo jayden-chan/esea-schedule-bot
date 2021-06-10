@@ -1,0 +1,27 @@
+{
+  "name": "esea-schedule-bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Jayden Chan <jaydencn7@gmail.com>",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w"
+  },
+  "devDependencies": {
+    "@types/node": "^15.12.2",
+    "@types/ws": "^7.4.4",
+    "typescript": "^4.3.2"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.10",
+    "discord.js": "^12.5.3",
+    "moment": "^2.29.1",
+    "moment-timezone": "^0.5.33",
+    "puppeteer": "^10.0.0",
+    "puppeteer-extra": "^3.1.18",
+    "puppeteer-extra-plugin-stealth": "^2.7.8",
+    "random-useragent": "^0.5.0"
+  }
+}
