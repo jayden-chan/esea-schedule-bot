@@ -1,5 +1,6 @@
 import * as Discord from "discord.js";
 import * as moment from "moment-timezone";
+import { ESEAItem } from "./types";
 
 export async function initDiscord(): Promise<Discord.Client> {
   const client = new Discord.Client();
@@ -19,36 +20,58 @@ export async function initDiscord(): Promise<Discord.Client> {
   });
 }
 
-export function getEmbed(props: {
-  id: number;
-  map: string;
-  time: string;
-  home: { id: number; name: string };
-  away: { id: number; name: string };
-}): Discord.MessageEmbed {
+export function getEmbed(item: ESEAItem): Discord.MessageEmbed {
   return new Discord.MessageEmbed()
     .setColor("#0e9648")
     .setTitle("ESEA League Match Soon!")
-    .setURL(`https://play.esea.net/match/${props.id}`)
+    .setURL(`https://play.esea.net/match/${item.id}`)
     .setThumbnail("https://i.imgur.com/s6FV8zx.png")
     .addFields(
-      { name: "Map", value: props.map },
-      { name: "Time", value: props.time },
+      { name: "Map", value: item.map.id },
+      {
+        name: "Time",
+        value: moment(item.date)
+          .tz("America/Edmonton")
+          .format("ddd, MMM Do @ h:mm A zz"),
+      },
       {
         name: "Home",
-        value: `[${props.home.name}](https://play.esea.net/teams/${props.home.id})`,
+        value: `[${item.home.name}](https://play.esea.net/teams/${item.home.id})`,
       },
       {
         name: "Away",
-        value: `[${props.away.name}](https://play.esea.net/teams/${props.away.id})`,
+        value: `[${item.away.name}](https://play.esea.net/teams/${item.away.id})`,
       },
-      { name: "Homepage", value: `https://play.esea.net/match/${props.id}` }
+      { name: "Homepage", value: `https://play.esea.net/match/${item.id}` }
     )
     .setTimestamp()
     .setFooter("ESEA Scheduling Bot", "https://i.imgur.com/s6FV8zx.png");
 }
 
 export async function sendMessage(
+  client: Discord.Client,
+  props: {
+    message: string;
+    channel: string;
+    role: string;
+    server: string;
+  }
+) {
+  const c = client.channels.cache.find(
+    (c) =>
+      c.isText() &&
+      "name" in c &&
+      c.name === props.channel &&
+      c.guild.name === props.server
+  )! as Discord.TextChannel;
+
+  const g = client.guilds.cache.find((g) => g.name === props.server)!;
+  const r = g.roles.cache.find((r) => r.name === props.role)!;
+
+  await c.send(`<@&${r.id}> ${props.message}`);
+}
+
+export async function sendEmbed(
   client: Discord.Client,
   props: {
     message: Discord.MessageEmbed;

@@ -1,49 +1,141 @@
-import { readFile } from "fs/promises";
 import * as moment from "moment-timezone";
+import * as Discord from "discord.js";
 
-import { initDiscord, getEmbed, sendMessage } from "./discord";
+import { initDiscord, getEmbed, sendEmbed, sendMessage } from "./discord";
+import { getMatches } from "./scrape";
 import { ESEAData } from "./types";
+
+const SIX_HOURS = 6 * 60 * 60 * 1000;
+const SERVER_NAME = "this shit ass server";
+const CHANNEL_NAME = "general";
+const ROLE_NAME = "RAT";
+
+let dayTimeout: NodeJS.Timeout | undefined;
+let warmupTimeout: NodeJS.Timeout | undefined;
+
+function log(message?: any, ...optionalParams: any[]) {
+  console.log(
+    `[${moment().format("MMM-DD hh:mm A")}]`,
+    message,
+    ...optionalParams
+  );
+}
+
+function error(message?: any, ...optionalParams: any[]) {
+  console.error(
+    `[${moment().format("MMM-DD hh:mm A")}]`,
+    message,
+    ...optionalParams
+  );
+}
+
+function tick(client: Discord.Client) {
+  return async () => {
+    log("Starting tick");
+
+    let data: ESEAData | undefined = undefined;
+    let timeout = 3000;
+    while (data === undefined) {
+      try {
+        data = await getMatches();
+      } catch (e) {
+        error(`failed to fetch data, sleeping for ${timeout} ms`);
+        await new Promise((resolve) => setTimeout(resolve, timeout));
+        timeout += 10000;
+      }
+
+      if (timeout >= 103000) {
+        error("Failed to fetch ESEA data after 10 attempts");
+        return;
+      }
+    }
+
+    const now = moment();
+    const hasMatchTomorrow = data.data.find((match) => {
+      const date = moment(match.date);
+      const diff = date.diff(now, "hours");
+
+      return diff < 31 && diff > 24;
+    });
+
+    const hasMatchToday = data.data.find((match) => {
+      const date = moment(match.date);
+      const diff = date.diff(now, "hours");
+
+      return diff > 0 && diff < 6;
+    });
+
+    if (hasMatchTomorrow) {
+      console.log(`Match for tomorrow found, scheduling notification`);
+
+      // Send the message 24 hours before the start date
+      const diffMs = moment(hasMatchTomorrow.date)
+        .subtract(24, "hours")
+        .diff(moment(), "ms");
+
+      if (diffMs > 0 && dayTimeout === undefined) {
+        dayTimeout = setTimeout(() => {
+          sendEmbed(client, {
+            message: getEmbed(hasMatchTomorrow),
+            server: SERVER_NAME,
+            channel: CHANNEL_NAME,
+            role: ROLE_NAME,
+          });
+          dayTimeout = undefined;
+        }, diffMs);
+      }
+    }
+
+    if (hasMatchToday) {
+      console.log(`Match for today found, scheduling notification`);
+
+      // Send the warmup message 1:15 before the start date
+      const diffMs = moment(hasMatchToday.date)
+        .subtract(75, "minutes")
+        .diff(moment(), "ms");
+
+      if (diffMs > 0 && warmupTimeout === undefined) {
+        warmupTimeout = setTimeout(() => {
+          sendMessage(client, {
+            message: "WARMUP IN 15 MINUTES, GET IN HERE",
+            server: SERVER_NAME,
+            channel: CHANNEL_NAME,
+            role: ROLE_NAME,
+          });
+          warmupTimeout = undefined;
+        }, diffMs);
+      }
+    }
+    log("Finished tick");
+  };
+}
 
 async function main() {
   const client = await initDiscord();
 
-  const json: ESEAData = JSON.parse(
-    await readFile("out.json", { encoding: "utf8" })
+  tick(client)();
+
+  // Refresh the data every 6 hours
+  console.log("Starting the interval");
+  const interval = setInterval(
+    tick(client),
+    SIX_HOURS + Math.floor(Math.random() * 15000)
   );
 
-  const today = moment();
-  const hasMatchIn24H = json.data.find((match) => {
-    const date = moment(match.date);
+  const exit = () => {
+    console.log("Exiting....");
+    clearInterval(interval);
 
-    const diff = date.diff(today, "hours");
+    dayTimeout && clearTimeout(dayTimeout);
+    warmupTimeout && clearTimeout(warmupTimeout);
 
-    if (Math.abs(diff) < 24) {
-      return true;
-    }
-    return false;
-  });
+    client.destroy();
+    console.log("Exited successfully");
+    process.exit(0);
+  };
 
-  if (hasMatchIn24H) {
-    const { id, map, home, away, date } = hasMatchIn24H;
-    const embed = getEmbed({
-      id,
-      home,
-      away,
-      map: map.id,
-      time: moment(date)
-        .tz("America/Edmonton")
-        .format("ddd, MMM Do @ h:mm A zz"),
-    });
-
-    await sendMessage(client, {
-      message: embed,
-      server: "this shit ass server",
-      channel: "general",
-      role: "RAT",
-    });
-  }
-
-  client.destroy();
+  process.on("SIGINT", exit);
+  process.on("SIGTERM", exit);
 }
 
 main();
