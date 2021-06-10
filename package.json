@@ -7,7 +7,8 @@
   "private": false,
   "scripts": {
     "build": "tsc",
-    "dev": "tsc -w"
+    "dev": "tsc -w",
+    "start": "node --enable-source-maps --unhandled-rejections=strict dist/index.js"
   },
   "devDependencies": {
     "@types/node": "^15.12.2",
