@@ -1,6 +1,6 @@
+import { hostname } from "os";
 import * as puppeteer from "puppeteer";
 import { ESEAData } from "./types";
-import { hostname } from "os";
 
 export async function getMatches() {
   const randomUseragent = require("random-useragent");

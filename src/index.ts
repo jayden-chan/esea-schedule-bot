@@ -1,16 +1,16 @@
-import * as moment from "moment-timezone";
 import * as Discord from "discord.js";
+import * as moment from "moment-timezone";
 
 import {
-  initDiscord,
   getEmbed,
+  initDiscord,
+  notifyWarmupLatecomers,
   sendEmbed,
   sendMessage,
-  notifyWarmupLatecomers,
 } from "./discord";
 
+import { error, log } from "./log";
 import { getMatches } from "./scrape";
-import { log, error } from "./log";
 import { ESEAData } from "./types";
 
 const SIX_HOURS = 6 * 60 * 60 * 1000;

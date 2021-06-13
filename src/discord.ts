@@ -1,7 +1,7 @@
 import * as Discord from "discord.js";
 import * as moment from "moment-timezone";
+import { error, log } from "./log";
 import { ESEAItem } from "./types";
-import { log, error } from "./log";
 
 const ESEA_GREEN = "#0e9648";
 const RAT_IMAGE = "https://i.imgur.com/s6FV8zx.png";
