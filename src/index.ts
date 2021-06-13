@@ -131,7 +131,7 @@ async function main() {
     if (message.content.startsWith("!esea")) {
       const command = message.content.split(" ")[1];
       if (command === undefined) {
-        message.channel.send("Provide a command.");
+        message.channel.send(`<@${message.author.id}> Provide a command.`);
         return;
       }
 
@@ -161,6 +161,7 @@ async function main() {
 
     dayTimeout && clearTimeout(dayTimeout);
     warmupTimeout && clearTimeout(warmupTimeout);
+    lateTimeout && clearTimeout(lateTimeout);
 
     client.destroy();
     log("Exited successfully");
