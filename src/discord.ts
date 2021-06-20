@@ -1,17 +1,10 @@
 import * as Discord from "discord.js";
 import * as moment from "moment-timezone";
+import { Config } from ".";
 import { error, log } from "./log";
 import { ESEAItem } from "./types";
 
 const ESEA_GREEN = "#0e9648";
-const RAT_IMAGE = "https://i.imgur.com/s6FV8zx.png";
-const TEAM_MEMBERS = [
-  "140677612178636800",
-  "195030314806935552",
-  "159144867723739136",
-  "194244725459386369",
-  "202996462953562121",
-];
 
 export async function initDiscord(): Promise<Discord.Client> {
   let intents = new Discord.Intents(Discord.Intents.NON_PRIVILEGED);
@@ -47,12 +40,11 @@ export function allVCMembers(client: Discord.Client): string[] {
 
 export async function notifyWarmupLatecomers(
   client: Discord.Client,
-  server: string,
-  channel: string,
+  config: Config,
   lateUsers: string[]
 ) {
   const vcMembers = allVCMembers(client);
-  const missingMembers = TEAM_MEMBERS.filter(
+  const missingMembers = config.teamMembers.filter(
     (m) => !vcMembers.includes(m) && !lateUsers.includes(m)
   );
 
@@ -60,7 +52,10 @@ export async function notifyWarmupLatecomers(
 
   const c = client.channels.cache.find(
     (c) =>
-      c.isText() && "name" in c && c.name === channel && c.guild.name === server
+      c.isText() &&
+      "name" in c &&
+      c.name === config.channelName &&
+      c.guild.name === config.serverName
   )! as Discord.TextChannel;
 
   const pings = missingMembers.map((id) => `<@${id}>`);
@@ -68,13 +63,13 @@ export async function notifyWarmupLatecomers(
   await c.send(`${pings.join(" ")} YOU ARE LATE FOR WARMUP!!!`);
 }
 
-export function getEmbed(item: ESEAItem): Discord.MessageEmbed {
+export function getEmbed(item: ESEAItem, config: Config): Discord.MessageEmbed {
   const matchLink = `https://play.esea.net/match/${item.id}`;
   return new Discord.MessageEmbed()
     .setColor(ESEA_GREEN)
     .setTitle("ESEA League Match Soon!")
     .setURL(matchLink)
-    .setThumbnail(RAT_IMAGE)
+    .setThumbnail(config.imageUrl)
     .addFields(
       { name: "Map", value: item.map.id },
       {
@@ -94,7 +89,7 @@ export function getEmbed(item: ESEAItem): Discord.MessageEmbed {
       { name: "Homepage", value: matchLink }
     )
     .setTimestamp()
-    .setFooter("ESEA Scheduling Bot", RAT_IMAGE);
+    .setFooter("ESEA Scheduling Bot", config.imageUrl);
 }
 
 export async function sendMessage(

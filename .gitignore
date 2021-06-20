@@ -3,3 +3,4 @@ node_modules
 *.swp
 *.env
 out.json
+config.json

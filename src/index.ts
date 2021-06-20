@@ -1,4 +1,5 @@
 import * as Discord from "discord.js";
+import { readFile } from "fs/promises";
 import * as moment from "moment-timezone";
 
 import {
@@ -15,16 +16,30 @@ import { ESEAData } from "./types";
 
 const SIX_HOURS = 6 * 60 * 60 * 1000;
 const FIFTEEN_MINS = 15 * 60 * 1000;
-const SERVER_NAME = "Rat With Gun eSports";
-const CHANNEL_NAME = "schedule";
-const ROLE_NAME = "RAT";
 
 let dayTimeout: NodeJS.Timeout | undefined;
 let warmupTimeout: NodeJS.Timeout | undefined;
 let lateTimeout: NodeJS.Timeout | undefined;
 let lateUsers: string[] = [];
 
-function checkMatchTomorrow(client: Discord.Client, data: ESEAData) {
+export type Config = {
+  serverName: string;
+  channelName: string;
+  roleName: string;
+  imageUrl: string;
+  timezone: string;
+  teamMembers: string[];
+};
+
+async function readConfig(path: string): Promise<Config> {
+  return JSON.parse(await readFile(path, { encoding: "utf8" }));
+}
+
+function checkMatchTomorrow(
+  client: Discord.Client,
+  data: ESEAData,
+  config: Config
+) {
   const now = moment();
   const hasMatchTomorrow = data.data.find((match) => {
     const date = moment(match.date);
@@ -44,10 +59,10 @@ function checkMatchTomorrow(client: Discord.Client, data: ESEAData) {
     if (diffMs > 0 && dayTimeout === undefined) {
       dayTimeout = setTimeout(() => {
         sendEmbed(client, {
-          message: getEmbed(hasMatchTomorrow),
-          server: SERVER_NAME,
-          channel: CHANNEL_NAME,
-          role: ROLE_NAME,
+          message: getEmbed(hasMatchTomorrow, config),
+          server: config.serverName,
+          channel: config.channelName,
+          role: config.roleName,
         });
         dayTimeout = undefined;
       }, diffMs);
@@ -55,7 +70,11 @@ function checkMatchTomorrow(client: Discord.Client, data: ESEAData) {
   }
 }
 
-function checkMatchToday(client: Discord.Client, data: ESEAData) {
+function checkMatchToday(
+  client: Discord.Client,
+  data: ESEAData,
+  config: Config
+) {
   const now = moment();
   const hasMatchToday = data.data.find((match) => {
     const date = moment(match.date);
@@ -76,9 +95,9 @@ function checkMatchToday(client: Discord.Client, data: ESEAData) {
       warmupTimeout = setTimeout(() => {
         sendMessage(client, {
           message: "WARMUP IN 15 MINUTES, GET IN HERE",
-          server: SERVER_NAME,
-          channel: CHANNEL_NAME,
-          role: ROLE_NAME,
+          server: config.serverName,
+          channel: config.channelName,
+          role: config.roleName,
         });
         warmupTimeout = undefined;
       }, msToWarmup - FIFTEEN_MINS);
@@ -87,7 +106,7 @@ function checkMatchToday(client: Discord.Client, data: ESEAData) {
     // Scold the late team members once warmup starts
     if (msToWarmup > 0 && lateTimeout === undefined) {
       lateTimeout = setTimeout(() => {
-        notifyWarmupLatecomers(client, SERVER_NAME, CHANNEL_NAME, lateUsers);
+        notifyWarmupLatecomers(client, config, lateUsers);
         lateTimeout = undefined;
         lateUsers = [];
       }, msToWarmup);
@@ -95,7 +114,7 @@ function checkMatchToday(client: Discord.Client, data: ESEAData) {
   }
 }
 
-function tick(client: Discord.Client) {
+function tick(client: Discord.Client, config: Config) {
   return async () => {
     log("Starting tick");
 
@@ -117,13 +136,19 @@ function tick(client: Discord.Client) {
       }
     }
 
-    checkMatchToday(client, data);
-    checkMatchTomorrow(client, data);
+    checkMatchToday(client, data, config);
+    checkMatchTomorrow(client, data, config);
     log("Finished tick");
   };
 }
 
 async function main() {
+  if (!process.argv[2]) {
+    console.error("Provide the path to the config");
+    return;
+  }
+  const config = await readConfig(process.argv[2]);
+
   log("Logging into discord");
   const client = await initDiscord();
 
@@ -146,12 +171,12 @@ async function main() {
     }
   });
 
-  tick(client)();
+  tick(client, config)();
 
   // Refresh the data every 6 hours
   log("Starting the interval");
   const interval = setInterval(
-    tick(client),
+    tick(client, config),
     SIX_HOURS + Math.floor(Math.random() * 15000)
   );
 
