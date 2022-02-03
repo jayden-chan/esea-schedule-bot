@@ -59,7 +59,6 @@ export async function notifyWarmupLatecomers(
   )! as Discord.TextChannel;
 
   const pings = missingMembers.map((id) => `<@${id}>`);
-
   await c.send(`${pings.join(" ")} YOU ARE LATE FOR WARMUP!!!`);
 }
 
@@ -67,7 +66,7 @@ export function getEmbed(item: ESEAItem, config: Config): Discord.MessageEmbed {
   const matchLink = `https://play.esea.net/match/${item.id}`;
   return new Discord.MessageEmbed()
     .setColor(ESEA_GREEN)
-    .setTitle("ESEA League Match Soon!")
+    .setTitle("ESEA League Match Today!")
     .setURL(matchLink)
     .setThumbnail(config.imageUrl)
     .addFields(
@@ -111,7 +110,6 @@ export async function sendMessage(
 
   const guild = client.guilds.cache.find((g) => g.name === props.server)!;
   const role = guild.roles.cache.find((r) => r.name === props.role)!;
-
   await channel.send(`<@&${role.id}> ${props.message}`);
 }
 
@@ -134,6 +132,5 @@ export async function sendEmbed(
 
   const guild = client.guilds.cache.find((g) => g.name === props.server)!;
   const role = guild.roles.cache.find((r) => r.name === props.role)!;
-
   await channel.send(`<@&${role.id}>`, props.message);
 }

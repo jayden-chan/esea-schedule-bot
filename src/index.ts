@@ -28,6 +28,7 @@ export type Config = {
   roleName: string;
   imageUrl: string;
   timezone: string;
+  apiUrl: string;
   teamMembers: string[];
 };
 
@@ -45,15 +46,15 @@ function checkMatchTomorrow(
     const date = moment(match.date);
     const diff = date.diff(now, "hours");
 
-    return diff < 31 && diff > 24;
+    return diff < 15 && diff > 8;
   });
 
   if (hasMatchTomorrow) {
-    log(`Match for tomorrow found, scheduling notification`);
+    log("Match for today found, scheduling 8h notification");
 
-    // Send the message 24 hours before the start date
+    // Send the message 8 hours before the start date
     const diffMs = moment(hasMatchTomorrow.date)
-      .subtract(24, "hours")
+      .subtract(8, "hours")
       .diff(moment(), "ms");
 
     if (diffMs > 0 && dayTimeout === undefined) {
@@ -84,33 +85,33 @@ function checkMatchToday(
   });
 
   if (hasMatchToday) {
-    log(`Match for today found, scheduling notification`);
+    log(`Match for today found, scheduling 1h notification`);
 
     const msToWarmup = moment(hasMatchToday.date)
       .subtract(60, "minutes")
       .diff(moment(), "ms");
 
-    // Send the warmup message 1:15 before the start date
-    if (msToWarmup - FIFTEEN_MINS > 0 && warmupTimeout === undefined) {
+    // Send the reminder message 1h before the start date
+    if (msToWarmup > 0 && warmupTimeout === undefined) {
       warmupTimeout = setTimeout(() => {
         sendMessage(client, {
-          message: "WARMUP IN 15 MINUTES, GET IN HERE",
+          message: "ESEA Match starting in 1 hour",
           server: config.serverName,
           channel: config.channelName,
           role: config.roleName,
         });
         warmupTimeout = undefined;
-      }, msToWarmup - FIFTEEN_MINS);
+      }, msToWarmup);
     }
 
     // Scold the late team members once warmup starts
-    if (msToWarmup > 0 && lateTimeout === undefined) {
-      lateTimeout = setTimeout(() => {
-        notifyWarmupLatecomers(client, config, lateUsers);
-        lateTimeout = undefined;
-        lateUsers = [];
-      }, msToWarmup);
-    }
+    // if (msToWarmup > 0 && lateTimeout === undefined) {
+    //   lateTimeout = setTimeout(() => {
+    //     notifyWarmupLatecomers(client, config, lateUsers);
+    //     lateTimeout = undefined;
+    //     lateUsers = [];
+    //   }, msToWarmup);
+    // }
   }
 }
 
@@ -122,7 +123,7 @@ function tick(client: Discord.Client, config: Config) {
     let timeout = 3000;
     while (data === undefined) {
       try {
-        data = await getMatches();
+        data = await getMatches(config.apiUrl);
       } catch (e) {
         error(`failed to fetch data, sleeping for ${timeout} ms`);
         error(e);
@@ -136,6 +137,7 @@ function tick(client: Discord.Client, config: Config) {
       }
     }
 
+    log("Fetched ESEA match data");
     checkMatchToday(client, data, config);
     checkMatchTomorrow(client, data, config);
     log("Finished tick");
@@ -147,7 +149,10 @@ async function main() {
     console.error("Provide the path to the config");
     return;
   }
+
+  log(`Reading config from ${process.argv[2]}`);
   const config = await readConfig(process.argv[2]);
+  log("Config: ", config);
 
   log("Logging into discord");
   const client = await initDiscord();
