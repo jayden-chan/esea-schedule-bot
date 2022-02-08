@@ -44,9 +44,9 @@ function checkMatchTomorrow(
   const now = moment();
   const hasMatchTomorrow = data.data.find((match) => {
     const date = moment(match.date);
-    const diff = date.diff(now, "hours");
+    const diff = date.diff(now, "minutes");
 
-    return diff < 15 && diff > 8;
+    return diff < 60 * 15 && diff > 60 * 8;
   });
 
   if (hasMatchTomorrow) {
@@ -54,7 +54,7 @@ function checkMatchTomorrow(
 
     // Send the message 8 hours before the start date
     const diffMs = moment(hasMatchTomorrow.date)
-      .subtract(8, "hours")
+      .subtract(60 * 8, "minutes")
       .diff(moment(), "ms");
 
     if (diffMs > 0 && dayTimeout === undefined) {
@@ -79,9 +79,9 @@ function checkMatchToday(
   const now = moment();
   const hasMatchToday = data.data.find((match) => {
     const date = moment(match.date);
-    const diff = date.diff(now, "hours");
+    const diff = date.diff(now, "minutes");
 
-    return diff > 0 && diff < 6;
+    return diff > 60 && diff < 6 * 60;
   });
 
   if (hasMatchToday) {
